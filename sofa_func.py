@@ -11,6 +11,7 @@ import click
 import lightning as pl
 import textgrid
 import logging
+from safetensors.torch import load_file
 
 DEBUG = True
 
@@ -23,6 +24,10 @@ if DEBUG:
 logger.setLevel(logging.INFO)
 
 def infer_sofa(ckpt: str,
+               safetensors_model: str,
+               safetensors_train_cfg: str,
+               safetensors_global_cfg: str,
+               safetensors_vocab: str,
 			   dictionary: str,
 			   op_format: str = 'htk',
 			   matmul_bool: bool = False,
@@ -67,7 +72,21 @@ def infer_sofa(ckpt: str,
 
 	# load model
 	torch.set_grad_enabled(False)
-	model = LitForcedAlignmentTask.load_from_checkpoint(ckpt, map_location=device)
+ 
+	if safetensors_model.exists() and safetensors_train_cfg.exists() and safetensors_global_cfg.exists() and safetensors_vocab.exists():
+		with open(safetensors_train_cfg) as f:
+			train_config = yaml.safe_load(f)
+		with open(safetensors_global_cfg) as f:
+			binarize_config = yaml.safe_load(f)
+		with open(safetensors_vocab) as f:
+			vocab = f.read()
+   
+		weights = load_file(safetensors_model)
+		model = LitForcedAlignmentTask(vocab, train_config['model'], binarize_config['melspec_config'], train_config['optimizer_config'], train_config['loss_config'], binarize_config['data_augmentation_size'] > 0)
+		model.load_state_dict(weights)
+	else:     
+		model = LitForcedAlignmentTask.load_from_checkpoint(ckpt, map_location=device)
+  
 	model.set_inference_mode('force')
 	trainer = pl.Trainer(logger=False)
 

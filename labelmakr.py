@@ -102,6 +102,10 @@ class LabelMakr(ctk.CTk):
 
 			self.sofa_models['models'][model] = {
 				'ckpt_path': P(MODELS / model / 'model.ckpt'),
+				'safetensors_model': P(MODELS / model / 'model.safetensors'),
+				'safetensors_train_cfg': P(MODELS / model / 'train_config.yaml'),
+    			'safetensors_global_cfg': P(MODELS / model / 'global_config.yaml'),
+       			'safetensors_vocab': P(MODELS / model / 'vocab.yaml'),
 				'dict_path': P(MODELS / model / 'dict.txt'),
 				'g2p': g2p_bool,
 				'g2p_model': g2p_model,
@@ -342,6 +346,10 @@ class LabelMakr(ctk.CTk):
 									   text=self.L('run_align'),
 									   command=lambda: self.run_sofa(
 				   							self.sofa_models['models'][self.model_cmbo.get()]['ckpt_path'],
+											self.sofa_models['models'][self.model_cmbo.get()]['safetensors_model'],
+											self.sofa_models['models'][self.model_cmbo.get()]['safetensors_train_cfg'],
+											self.sofa_models['models'][self.model_cmbo.get()]['safetensors_global_cfg'],
+											self.sofa_models['models'][self.model_cmbo.get()]['safetensors_vocab'],
 				   							self.sofa_models['models'][self.model_cmbo.get()]['dict_path'],
 				   							self.sofa_models['models'][self.model_cmbo.get()]['g2p'],
 				   							self.sofa_models['models'][self.model_cmbo.get()]['g2p_model'],
@@ -549,12 +557,16 @@ class LabelMakr(ctk.CTk):
 
 	def run_sofa(self,
 				 ckpt: str,
+     			 safetensors_model: str,
+				 safetensors_train_cfg: str,
+				 safetensors_global_cfg: str,
+				 safetensor_vocab: str,
 				 dictionary: str,
 				 g2p_bool: bool,
 				 g2p_model: str,
 				 g2p_cfg: str
 		):
-		x = threading.Thread(target=sofa_func.infer_sofa(ckpt, dictionary, self.op_cmbo.get(), self.matmul_var.get(), self.lang_cmbo.get(), g2p_bool, g2p_model, g2p_cfg,))
+		x = threading.Thread(target=sofa_func.infer_sofa(ckpt, safetensors_model, safetensors_train_cfg, safetensors_global_cfg, safetensor_vocab, dictionary, self.op_cmbo.get(), self.matmul_var.get(), self.lang_cmbo.get(), g2p_bool, g2p_model, g2p_cfg,))
 		x.start()
 
 	def startfile(self, filename):
